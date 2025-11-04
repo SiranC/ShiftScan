@@ -1,0 +1,3 @@
+Well	Wells that repeatedly failed
+G1	3
+P1	3

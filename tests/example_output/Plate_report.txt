@@ -1,0 +1,5 @@
+Assay_Plate	Source_Plate	Total_failures	Plate_status	Failed ctrl wells	Ctrl_Tm_Z-score_failures	Modelling_failures	Amp_Z-score_failures
+Assay_plate1	Library_plate1	6	OK	A1,G1,H2,O2,P1,P2	4	0	2
+Assay_plate2	Library_plate2	5	OK	G1,J1,J2,P1,P2	4	0	1
+Assay_plate3	Library_plate3	0	OK		0	0	0
+Assay_plate4	Library_plate4	9	Failed	B1,G1,H2,I1,I2,J1,L2,M2,P1	7	0	2

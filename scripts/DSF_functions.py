@@ -434,7 +434,8 @@ def default_analysis(final_df,control_cols,delimiter,normalization,smoothing_fac
     semifinal_curves = pd.concat([original_curve_df, all_subcurves_df], ignore_index=True)
     semifinal_curves['Subplot'].fillna('Original', inplace=True)
     semifinal_curves['Subplot'] = semifinal_curves['Subplot'].astype(str)
-    semifinal_curves[['Assay_Plate', 'Well']] = semifinal_curves['Unique_key'].str.rsplit('_', 1, expand=True)
+    #semifinal_curves[['Assay_Plate', 'Well']] = semifinal_curves['Unique_key'].str.rsplit('_', 1, expand=True) # pandas ver. < 2.2
+    semifinal_curves[['Assay_Plate', 'Well']] = semifinal_curves['Unique_key'].str.rsplit('_', n=1, expand=True)
     
     Tm_df = pd.DataFrame(all_tm_rows)
     print(f"Tm DataFrame created with {len(Tm_df)} rows.")
@@ -476,7 +477,8 @@ def default_analysis(final_df,control_cols,delimiter,normalization,smoothing_fac
     grouped = Tm_df.groupby('Unique_key')
     Tm_df = pd.concat([final_decision(group) for _, group in grouped], ignore_index=True)
     Tm_df['Final_decision'] = np.where(Tm_df['Well_type'] == 'Blank', 'Removed', Tm_df['Final_decision'])
-    Tm_df['Final_Tm'] = np.where(Tm_df['Final_decision'] == 'Pass', Tm_df['Smooth_Tm'], np.NaN)
+    #Tm_df['Final_Tm'] = np.where(Tm_df['Final_decision'] == 'Pass', Tm_df['Smooth_Tm'], np.NaN) #NumPy Ver.< 2.0
+    Tm_df['Final_Tm'] = np.where(Tm_df['Final_decision'] == 'Pass', Tm_df['Smooth_Tm'], np.nan)
 
     well_type_df = Tm_df.loc[:, ['Unique_key', 'Well_type']]
     decision_df = Tm_df.loc[:, ['Unique_key', 'Subplot', 'Final_decision', 'Error', 'Ctrl_Tm_z-score']]
@@ -507,7 +509,15 @@ def default_analysis(final_df,control_cols,delimiter,normalization,smoothing_fac
 
         #Calculating final z-scores per well
         plate_zscores = Tm_df[Tm_df['Final_Tm'].notna()].groupby(['Assay_Plate'],as_index=False)['Final_Tm'].transform(stats.zscore) #Find z-score for all wells regardless of well type
-        plate_zscores.rename(columns={'Final_Tm': 'Well_zscore'}, inplace=True)
+        #plate_zscores.rename(columns={'Final_Tm': 'Well_zscore'}, inplace=True) # Series.rename() doesn't support 'columns' parameter
+        # Ensure plate_zscores ends up as a DataFrame with a column named 'Well_zscore'
+        if isinstance(plate_zscores, pd.Series):
+            # Rename the Series itself and convert to a one-column DataFrame
+            plate_zscores = plate_zscores.rename('Well_zscore').to_frame()
+        else:
+            # It's already a DataFrame
+            plate_zscores = plate_zscores.rename(columns={'Final_Tm': 'Well_zscore'})
+
         Tm_df = Tm_df.join(plate_zscores) #merge on index
 
         #Finding max ctrl z-score per plate
